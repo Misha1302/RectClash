@@ -332,6 +332,53 @@
     }
   }
 
+  function createHighlightRect(move, options) {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', String(move.x * CELL_SIZE));
+    rect.setAttribute('y', String(move.y * CELL_SIZE));
+    rect.setAttribute('width', String(move.width * CELL_SIZE));
+    rect.setAttribute('height', String(move.height * CELL_SIZE));
+    rect.setAttribute('fill', options.fill ?? 'none');
+    rect.setAttribute('stroke', options.stroke);
+    rect.setAttribute('stroke-width', String(options.strokeWidth));
+    rect.setAttribute('vector-effect', 'non-scaling-stroke');
+    rect.setAttribute('pointer-events', 'none');
+    if (options.strokeDasharray) rect.setAttribute('stroke-dasharray', options.strokeDasharray);
+    if (options.strokeOpacity !== undefined) rect.setAttribute('stroke-opacity', String(options.strokeOpacity));
+    if (options.filter) rect.setAttribute('filter', options.filter);
+    if (options.rx !== undefined) rect.setAttribute('rx', String(options.rx));
+    return rect;
+  }
+
+  function ensureGlowFilter(svg, currentColor) {
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+    filter.setAttribute('id', 'selected-move-glow');
+    filter.setAttribute('x', '-35%');
+    filter.setAttribute('y', '-35%');
+    filter.setAttribute('width', '170%');
+    filter.setAttribute('height', '170%');
+
+    const shadowOuter = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
+    shadowOuter.setAttribute('dx', '0');
+    shadowOuter.setAttribute('dy', '0');
+    shadowOuter.setAttribute('stdDeviation', '2.6');
+    shadowOuter.setAttribute('flood-color', currentColor);
+    shadowOuter.setAttribute('flood-opacity', '0.95');
+
+    const shadowSoft = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
+    shadowSoft.setAttribute('dx', '0');
+    shadowSoft.setAttribute('dy', '0');
+    shadowSoft.setAttribute('stdDeviation', '5.5');
+    shadowSoft.setAttribute('flood-color', '#ffffff');
+    shadowSoft.setAttribute('flood-opacity', '0.95');
+
+    filter.appendChild(shadowOuter);
+    filter.appendChild(shadowSoft);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+  }
+
   function renderBoard() {
     const svg = ui.gameBoard;
     svg.innerHTML = '';
@@ -344,25 +391,7 @@
     bg.setAttribute('fill', '#fff');
     svg.appendChild(bg);
 
-    // Слои подсветки допустимых позиций
-    const currentColor = state.settings.players[state.currentPlayer].color;
-    for (const move of state.allowedMoves) {
-      const key = moveKey(move);
-      const isHover = state.hoverMoveKey === key;
-      const isSelected = state.selectedMoveKey === key;
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(move.x * CELL_SIZE));
-      rect.setAttribute('y', String(move.y * CELL_SIZE));
-      rect.setAttribute('width', String(move.width * CELL_SIZE));
-      rect.setAttribute('height', String(move.height * CELL_SIZE));
-      rect.setAttribute('fill', rgba(currentColor, isHover || isSelected ? 0.33 : move.full ? 0.22 : 0.14));
-      rect.setAttribute('stroke', move.full ? '#22c55e' : rgba(currentColor, 0.75));
-      rect.setAttribute('stroke-dasharray', move.full ? '0' : '8 4');
-      rect.setAttribute('stroke-width', isHover || isSelected ? '3' : '2');
-      svg.appendChild(rect);
-    }
-
-    // Поставленные прямоугольники игроков
+    // Поставленные прямоугольники игроков (без изменений UX-заливки)
     for (const placed of state.rects) {
       const color = state.settings.players[placed.playerId].color;
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -373,11 +402,86 @@
       rect.setAttribute('fill', rgba(color, 0.75));
       rect.setAttribute('stroke', rgba(color, 1));
       rect.setAttribute('stroke-width', '2');
-      rect.style.transition = 'all 120ms ease-out';
       svg.appendChild(rect);
     }
 
     drawGrid(svg);
+
+    // Слои подсветки допустимых позиций (разделены: вариант, hover, выбранный)
+    const currentColor = state.settings.players[state.currentPlayer].color;
+    ensureGlowFilter(svg, currentColor);
+
+    const overlayGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const hoverGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const selectedGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+    for (const move of state.allowedMoves) {
+      const key = moveKey(move);
+      const isHover = state.hoverMoveKey === key;
+      const isSelected = state.selectedMoveKey === key;
+
+      if (!isHover && !isSelected) {
+        overlayGroup.appendChild(
+          createHighlightRect(move, {
+            fill: 'none',
+            stroke: move.full ? '#5b6f8f' : '#90a0b9',
+            strokeWidth: 1.6,
+            strokeOpacity: move.full ? 0.34 : 0.27,
+            strokeDasharray: move.full ? null : '5 5',
+            rx: 2
+          })
+        );
+      }
+
+      if (isHover && !isSelected) {
+        hoverGroup.appendChild(
+          createHighlightRect(move, {
+            fill: rgba(currentColor, 0.08),
+            stroke: '#0f172a',
+            strokeWidth: 2.5,
+            strokeOpacity: 0.75,
+            strokeDasharray: null,
+            rx: 2
+          })
+        );
+      }
+
+      if (isSelected) {
+        selectedGroup.appendChild(
+          createHighlightRect(move, {
+            fill: 'none',
+            stroke: '#ffffff',
+            strokeWidth: 7,
+            filter: 'url(#selected-move-glow)',
+            strokeDasharray: null,
+            rx: 2
+          })
+        );
+        selectedGroup.appendChild(
+          createHighlightRect(move, {
+            fill: 'none',
+            stroke: currentColor,
+            strokeWidth: 4.5,
+            strokeDasharray: null,
+            rx: 2
+          })
+        );
+        selectedGroup.appendChild(
+          createHighlightRect(move, {
+            fill: 'none',
+            stroke: '#111827',
+            strokeWidth: 1.5,
+            strokeOpacity: 0.8,
+            strokeDasharray: '9 4',
+            rx: 2
+          })
+        );
+      }
+    }
+
+    svg.appendChild(overlayGroup);
+    svg.appendChild(hoverGroup);
+    svg.appendChild(selectedGroup);
   }
 
   function renderPanel() {
