@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rect Clash</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="setupScreen" class="card screen active">
+      <h1>Rect Clash</h1>
+      <p class="subtitle">Пошаговая тактическая игра прямоугольников для 2 игроков</p>
+
+      <div class="form-grid">
+        <label>
+          Ширина поля
+          <input id="fieldWidth" type="number" min="10" max="120" value="60" />
+        </label>
+        <label>
+          Высота поля
+          <input id="fieldHeight" type="number" min="10" max="100" value="40" />
+        </label>
+        <label>
+          Макс. случайное число
+          <input id="maxRoll" type="number" min="3" max="20" value="10" />
+        </label>
+        <label>
+          Игрок 1: имя
+          <input id="player1Name" type="text" maxlength="24" value="Игрок 1" />
+        </label>
+        <label>
+          Игрок 1: цвет
+          <input id="player1Color" type="color" value="#2F80ED" />
+        </label>
+        <label>
+          Игрок 2: имя
+          <input id="player2Name" type="text" maxlength="24" value="Игрок 2" />
+        </label>
+        <label>
+          Игрок 2: цвет
+          <input id="player2Color" type="color" value="#EB5757" />
+        </label>
+      </div>
+
+      <button id="startGameBtn" class="btn btn-primary">Начать игру</button>
+    </section>
+
+    <section id="gameScreen" class="screen hidden">
+      <div class="topbar card">
+        <div class="turn-box">
+          <span>Ход:</span>
+          <strong id="currentPlayerName">—</strong>
+        </div>
+        <div class="roll-box">
+          <span>Числа:</span>
+          <strong id="rollText">—</strong>
+          <span class="orientation" id="orientationText">—</span>
+        </div>
+        <div class="status-box" id="adjacencyStatus">—</div>
+      </div>
+
+      <div class="board-wrapper card">
+        <div id="boardContainer" class="board-container">
+          <svg id="gameBoard" aria-label="Игровое поле"></svg>
+        </div>
+      </div>
+
+      <div class="controls card">
+        <button id="rotateBtn" class="btn">Повернуть</button>
+        <button id="confirmBtn" class="btn btn-primary" disabled>Подтвердить ход</button>
+        <button id="clearSelectionBtn" class="btn" disabled>Сбросить выбор</button>
+        <button id="newMatchBtn" class="btn">Новый матч</button>
+        <button id="backToSetupBtn" class="btn">Назад в настройки</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="endModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <div class="modal-card">
+      <h2 id="endTitle">Матч завершен</h2>
+      <p id="endMessage">—</p>
+      <div class="modal-actions">
+        <button id="playAgainBtn" class="btn btn-primary">Сыграть еще раз</button>
+        <button id="toSetupBtn" class="btn">В настройки</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
