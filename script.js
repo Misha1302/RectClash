@@ -1,6 +1,9 @@
 (() => {
   const CELL_SIZE = 18;
   const GRID_LINE_COLOR = '#e8edf5';
+  const MOVE_OUTLINE_COLOR = '#94a3b8';
+  const MOVE_HOVER_OUTLINE_COLOR = '#38bdf8';
+  const MOVE_SELECTED_OUTLINE_COLOR = '#facc15';
   const DEFAULTS = {
     width: 60,
     height: 40,
@@ -344,8 +347,7 @@
     bg.setAttribute('fill', '#fff');
     svg.appendChild(bg);
 
-    // Слои подсветки допустимых позиций
-    const currentColor = state.settings.players[state.currentPlayer].color;
+    // Слои подсветки допустимых позиций без заливки, чтобы не было наложения цветов
     for (const move of state.allowedMoves) {
       const key = moveKey(move);
       const isHover = state.hoverMoveKey === key;
@@ -355,10 +357,13 @@
       rect.setAttribute('y', String(move.y * CELL_SIZE));
       rect.setAttribute('width', String(move.width * CELL_SIZE));
       rect.setAttribute('height', String(move.height * CELL_SIZE));
-      rect.setAttribute('fill', rgba(currentColor, isHover || isSelected ? 0.33 : move.full ? 0.22 : 0.14));
-      rect.setAttribute('stroke', move.full ? '#22c55e' : rgba(currentColor, 0.75));
-      rect.setAttribute('stroke-dasharray', move.full ? '0' : '8 4');
-      rect.setAttribute('stroke-width', isHover || isSelected ? '3' : '2');
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute(
+        'stroke',
+        isSelected ? MOVE_SELECTED_OUTLINE_COLOR : isHover ? MOVE_HOVER_OUTLINE_COLOR : MOVE_OUTLINE_COLOR
+      );
+      rect.setAttribute('stroke-dasharray', isSelected ? '0' : move.full ? '3 2' : '8 4');
+      rect.setAttribute('stroke-width', isSelected ? '4' : isHover ? '3' : '2');
       svg.appendChild(rect);
     }
 
